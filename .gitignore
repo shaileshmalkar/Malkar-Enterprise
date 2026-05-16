@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Build
+frontend/dist/
+
+# Env & secrets
+.env
+.env.local
+.env.*.local
+
+# Leads (keep local, do not commit customer data)
+backend/data/enquiries/enquiries.json
+backend/data/enquiries/enquiries.csv
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.log
+
+# Nested duplicate folder (if present)
+malkar-enterprises-platform/
