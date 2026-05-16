@@ -1,13 +1,15 @@
-# Deploy backend API on Render (free tier): https://render.com
-# PDFs & enquiries are stored on the server disk under backend/data/
+# Render Blueprint: https://dashboard.render.com/select-repo?type=blueprint
+# Connect this GitHub repo and deploy. Service URL → set as VITE_API_URL on Vercel.
 services:
   - type: web
     name: malkar-api
     runtime: python
+    plan: free
     rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /
     envVars:
       - key: PYTHON_VERSION
         value: "3.11.0"
-      # RENDER_EXTERNAL_URL is set automatically; used for PDF/map links in API responses
+      # Render sets RENDER_EXTERNAL_URL automatically for PDF/map links in API responses
