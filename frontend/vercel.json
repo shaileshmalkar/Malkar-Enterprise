@@ -2,5 +2,8 @@
   "installCommand": "npm install",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    { "handle": "filesystem" },
+    { "source": "/((?!assets/).*)", "destination": "/index.html" }
+  ]
 }

@@ -12,7 +12,8 @@ import {
   resolveImage,
 } from './config/defaults.js'
 
-const API = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'
+const API = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+const HAS_REMOTE_API = Boolean(API)
 
 const CONTACT_PHONES = [
   { display: '8850382276', tel: '+918850382276' },
@@ -28,7 +29,7 @@ const SOCIAL_LINKS = [
 
 const mobileMenuOpen = ref(false)
 
-const projects = ref([])
+const projects = ref([{ ...DEFAULT_PROJECT }])
 const selectedProjectId = ref(1)
 const isLoading = ref(true)
 const activeNav = ref('dashboard')
@@ -38,7 +39,6 @@ const selectedDocUrl = ref('')
 const enquiry = ref({ name: '', mobile: '', email: '', message: '' })
 const enquiryStatus = ref('')
 const enquirySubmitOk = ref(false)
-const apiError = ref('')
 
 const sidebarLinks = [
   { id: 'dashboard', label: 'Dashboard', icon: 'grid', section: 'dashboard' },
@@ -86,12 +86,12 @@ const activeProject = computed(() => {
     launch_date: api.launch_date || DEFAULT_PROJECT.launch_date,
     possession_date: api.possession_date || DEFAULT_PROJECT.possession_date,
     floor_plans: api.floor_plans || {},
+    documents: api.documents?.length ? api.documents : DEFAULT_DOCUMENTS,
   }
 })
 
 const projectCount = computed(() => Math.max(projects.value.length, 1))
 const hasUploadedDocs = computed(() => documents.value.length > 0)
-const docsLoadFailed = computed(() => Boolean(apiError.value) && !hasUploadedDocs.value)
 
 const projectImages = computed(() => {
   const api = activeProject.value?.images || {}
@@ -197,18 +197,22 @@ function toggleMobileMenu() {
 
 async function loadProjects() {
   isLoading.value = true
-  apiError.value = ''
   try {
+    if (!HAS_REMOTE_API) {
+      projects.value = [{ ...DEFAULT_PROJECT }]
+      syncSelectedDocument()
+      return
+    }
     const res = await fetch(`${API}/projects`)
     if (!res.ok) throw new Error('Failed to load')
-    projects.value = await res.json()
-    if (projects.value.length && !projects.value.find((p) => p.id === selectedProjectId.value)) {
+    const data = await res.json()
+    projects.value = Array.isArray(data) && data.length ? data : [{ ...DEFAULT_PROJECT }]
+    if (!projects.value.find((p) => p.id === selectedProjectId.value)) {
       selectedProjectId.value = projects.value[0].id
     }
     syncSelectedDocument()
   } catch {
     projects.value = [{ ...DEFAULT_PROJECT }]
-    apiError.value = ''
     syncSelectedDocument()
   } finally {
     isLoading.value = false
@@ -252,7 +256,10 @@ async function submitEnquiry() {
   }
 }
 
-onMounted(loadProjects)
+onMounted(() => {
+  syncSelectedDocument()
+  loadProjects()
+})
 </script>
 
 <template>
@@ -575,16 +582,7 @@ onMounted(loadProjects)
               </button>
             </div>
 
-            <div v-if="docsLoadFailed" class="empty-state">
-              <AppIcon name="file" :size="32" />
-              <strong>Documents unavailable</strong>
-              <p>We couldn’t load plans right now. Please try again in a moment.</p>
-              <button type="button" class="btn-outline btn-sm-inline" :disabled="isLoading" @click="loadProjects">
-                Try again
-              </button>
-            </div>
-
-            <div v-else-if="!hasUploadedDocs" class="empty-state">
+            <div v-if="!hasUploadedDocs" class="empty-state">
               <AppIcon name="file" :size="32" />
               <strong>Plans coming soon</strong>
               <p>Municipal drawings for {{ displayName }} will be published here shortly.</p>
