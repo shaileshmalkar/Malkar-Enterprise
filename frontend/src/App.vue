@@ -3,10 +3,12 @@ import { computed, onMounted, ref } from 'vue'
 import AppIcon from './components/AppIcon.vue'
 import {
   DEFAULT_CATEGORIES,
+  DEFAULT_DOCUMENTS,
   DEFAULT_FLOORS,
   DEFAULT_PHASES,
   DEFAULT_PROJECT,
   LOCAL_IMAGES,
+  resolveApiUrl,
   resolveImage,
 } from './config/defaults.js'
 
@@ -89,7 +91,7 @@ const activeProject = computed(() => {
 
 const projectCount = computed(() => Math.max(projects.value.length, 1))
 const hasUploadedDocs = computed(() => documents.value.length > 0)
-const docsLoadFailed = computed(() => Boolean(apiError.value))
+const docsLoadFailed = computed(() => Boolean(apiError.value) && !hasUploadedDocs.value)
 
 const projectImages = computed(() => {
   const api = activeProject.value?.images || {}
@@ -120,7 +122,18 @@ const floors = computed(() => {
   return api?.length ? api : DEFAULT_FLOORS
 })
 
-const documents = computed(() => activeProject.value?.documents || [])
+const documents = computed(() => {
+  const apiDocs = activeProject.value?.documents || []
+  const normalized = apiDocs.map((doc) => ({
+    ...doc,
+    url: resolveApiUrl(doc.url, API),
+  }))
+  if (normalized.length) return normalized
+  return DEFAULT_DOCUMENTS.map((doc) => ({
+    ...doc,
+    url: resolveApiUrl(doc.url, API),
+  }))
+})
 const maps = computed(() => activeProject.value?.maps || [])
 
 const displayName = computed(() => activeProject.value.display_name)
@@ -194,8 +207,9 @@ async function loadProjects() {
     }
     syncSelectedDocument()
   } catch {
-    projects.value = []
-    apiError.value = 'offline'
+    projects.value = [{ ...DEFAULT_PROJECT }]
+    apiError.value = ''
+    syncSelectedDocument()
   } finally {
     isLoading.value = false
   }
@@ -385,7 +399,7 @@ onMounted(loadProjects)
         </section>
 
         <!-- All projects (multi-project switcher) -->
-        <section v-if="projects.length > 0" class="card panel project-picker" id="all-projects">
+        <section v-if="projects.length > 1" class="card panel project-picker" id="all-projects">
           <div class="panel-head">
             <div>
               <span class="eyebrow">Portfolio</span>
@@ -608,7 +622,7 @@ onMounted(loadProjects)
                 </div>
                 <iframe
                   :key="selectedDocument.url"
-                  :src="`${selectedDocument.url}#toolbar=1&navpanes=1`"
+                  :src="`${encodeURI(selectedDocument.url)}#toolbar=1&navpanes=1`"
                   class="pdf-iframe"
                   title="PDF preview"
                 />
@@ -2072,6 +2086,135 @@ onMounted(loadProjects)
     flex-direction: column;
     align-items: flex-end;
     gap: 0.35rem;
+  }
+
+  .panel-head,
+  .panel-head-split {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pdf-viewer-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pdf-viewer-toolbar strong {
+    max-width: 100%;
+  }
+
+  .pdf-toolbar-actions {
+    width: 100%;
+  }
+
+  .pdf-toolbar-actions a {
+    flex: 1;
+    text-align: center;
+  }
+
+  .doc-card {
+    grid-template-columns: auto 1fr;
+    gap: 0.65rem;
+  }
+
+  .doc-card-action {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .rera-badge {
+    align-self: flex-start;
+  }
+
+  .site-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .footer-links {
+    align-items: flex-start;
+    text-align: left;
+  }
+}
+
+@media (max-width: 640px) {
+  .header-phones {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    max-width: calc(100% - 48px);
+  }
+
+  .header-phone span {
+    display: inline;
+    font-size: 0.68rem;
+  }
+
+  .header-phone {
+    width: auto;
+    height: auto;
+    padding: 0.35rem 0.55rem;
+    border-radius: 999px;
+  }
+
+  .stats-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .category-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-btns {
+    flex-direction: column;
+  }
+
+  .hero-btns .btn-gold,
+  .hero-btns .btn-outline {
+    width: 100%;
+    text-align: center;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-grid label.full {
+    grid-column: span 1;
+  }
+
+  .pdf-iframe {
+    min-height: 280px;
+    height: 50vh;
+  }
+}
+
+@media (max-width: 400px) {
+  .top-header {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .header-left {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .header-phones {
+    width: 100%;
+    max-width: none;
+    justify-content: stretch;
+    gap: 0.35rem;
+  }
+
+  .header-phone {
+    flex: 1;
+    justify-content: center;
+    min-width: 0;
+  }
+
+  .header-phone span {
+    font-size: 0.62rem;
+    letter-spacing: -0.02em;
   }
 }
 </style>

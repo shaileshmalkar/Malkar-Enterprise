@@ -56,8 +56,31 @@ export const DEFAULT_FLOORS = [
   '7th Floor',
 ]
 
+/** Bundled PDFs — served from /public on Vercel (no backend required). */
+export const DEFAULT_DOCUMENTS = [
+  {
+    id: 'kala-chowki-draft-plans',
+    name: 'DRAFT PLANS — Phase II Municipal Drawing (FSI 5.40)',
+    url: '/project-files/kala-chowki/draft-plans-municipal.pdf',
+    available: true,
+  },
+  {
+    id: 'kala-chowki-ganesha-galaxy',
+    name: 'GANESHA GALAXY Municipal Drawing Set',
+    url: '/project-files/kala-chowki/ganesha-galaxy-municipal.pdf',
+    available: true,
+  },
+  {
+    id: 'kala-chowki-gallery',
+    name: 'Project Gallery Booklet',
+    url: '/project-files/kala-chowki/project-gallery-booklet.pdf',
+    available: true,
+  },
+]
+
 export const DEFAULT_PROJECT = {
   id: 1,
+  slug: 'kala-chowki',
   display_name: 'Kalyan Kala Chowk',
   tagline: 'Premium Commercial Complex',
   location: 'Kalyan (W), Thane, Maharashtra',
@@ -75,8 +98,26 @@ export const DEFAULT_PROJECT = {
   images: LOCAL_IMAGES,
   categories: DEFAULT_CATEGORIES,
   construction_phases: DEFAULT_PHASES,
-  documents: [],
+  documents: DEFAULT_DOCUMENTS,
   maps: [],
+}
+
+/** Normalize API asset URLs (fixes localhost links from the backend). */
+export function resolveApiUrl(url, apiBase) {
+  if (!url || typeof url !== 'string') return ''
+  const base = (apiBase || '').replace(/\/$/, '')
+  if (url.startsWith('/')) return url
+  if (url.startsWith('/project-files/')) return url
+  try {
+    const parsed = new URL(url, base || 'http://localhost')
+    if (parsed.hostname === '127.0.0.1' || parsed.hostname === 'localhost') {
+      if (!base) return parsed.pathname
+      return `${base}${parsed.pathname}${parsed.search}`
+    }
+    return parsed.href
+  } catch {
+    return url
+  }
 }
 
 /** Prefer local assets when API returns missing or blocked CDN URLs. */

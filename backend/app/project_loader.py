@@ -1,8 +1,19 @@
+import os
 from pathlib import Path
+from urllib.parse import quote
 
 BACKEND_ROOT = Path(__file__).resolve().parent.parent
 DATA_ROOT = BACKEND_ROOT / "data" / "projects"
-API_BASE = "http://127.0.0.1:8000"
+
+
+def api_base() -> str:
+    """Public API origin for asset URLs (Render sets RENDER_EXTERNAL_URL)."""
+    base = (
+        os.environ.get("PUBLIC_API_BASE_URL")
+        or os.environ.get("RENDER_EXTERNAL_URL")
+        or "http://127.0.0.1:8000"
+    )
+    return base.rstrip("/")
 
 IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".webp"}
 DOC_EXTS = {".pdf"}
@@ -25,7 +36,7 @@ def _scan_pdfs(docs_dir: Path, slug: str) -> list[dict]:
                 "id": doc_id,
                 "name": path.stem.replace("_", " "),
                 "filename": path.name,
-                "url": f"{API_BASE}/projects/{slug}/documents/{path.name}",
+                "url": f"{api_base()}/projects/{slug}/documents/{quote(path.name)}",
                 "available": True,
             }
         )
@@ -45,7 +56,7 @@ def _scan_images(folder: Path, slug: str, route: str) -> list[dict]:
                 "id": item_id,
                 "name": path.stem.replace("_", " ").replace("-", " ").title(),
                 "filename": path.name,
-                "url": f"{API_BASE}/projects/{slug}/{route}/{path.name}",
+                "url": f"{api_base()}/projects/{slug}/{route}/{quote(path.name)}",
                 "available": True,
             }
         )

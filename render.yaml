@@ -10,3 +10,4 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: "3.11.0"
+      # RENDER_EXTERNAL_URL is set automatically; used for PDF/map links in API responses
